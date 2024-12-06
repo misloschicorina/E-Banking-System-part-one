@@ -1,17 +1,9 @@
 package org.poo.main;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import org.poo.utils.Utils;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-
 
 import java.util.ArrayList;
 import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-
-// @JsonPropertyOrder({ "IBAN", "balance", "currency", "type", "cards" })
 
 public abstract class Account {
     private String IBAN;
@@ -21,11 +13,11 @@ public abstract class Account {
     private String accountType;     // Can be classic or savings
     private String ownerEmail;      // Email of the owner
 
-    public Account(String currency, String type, String ownerEmail) {
+    public Account(String currency, String type, String ownerEmail, String IBAN) {
         this.balance = 0;
         this.cards = new ArrayList<>();
         this.currency = currency;
-        this.IBAN = Utils.generateIBAN();
+        this.IBAN = IBAN;
         this.accountType = type;
         this.ownerEmail = ownerEmail;
     }

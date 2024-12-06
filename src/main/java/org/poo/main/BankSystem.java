@@ -1,5 +1,7 @@
 package org.poo.main;
 
+import org.poo.utils.Utils;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -24,9 +26,12 @@ public class BankSystem {
                 case "createCard" -> createCard(command);
                 case "createOneTimeCard" -> createOneTimeCard(command);
                 case "addFunds" -> addFunds(command);
-                default -> { }
+                case "deleteAccount" -> deleteAccount(command, output);
+                default -> {
+                }
             }
         }
+        Utils.resetRandom();
     }
 
     private ArrayNode printCardsForAccount(List<Card> cards) {
@@ -130,14 +135,17 @@ public class BankSystem {
 
         Account account = null;
 
+        String IBAN = Utils.generateIBAN();
+
         if ("classic".equals(accountType)) {
-            account = new ClassicAccount(currency, command.getEmail());
+            account = new ClassicAccount(currency, command.getEmail(), IBAN);
         } else if ("savings".equals(accountType)) {
-            account = new SavingsAccount(currency, command.getEmail(), 0); // Initial interest rate set to 0
+            account = new SavingsAccount(currency, command.getEmail(), 0, IBAN); // Initial interest rate set to 0
         }
 
         user.addAccount(account);
     }
+
 
     private void createCard(CommandInput command) {
         User user = findUserByEmail(command.getEmail());
@@ -145,7 +153,7 @@ public class BankSystem {
         if (user == null)
             return;
 
-        Account account = findAccountByIBAN(command.getAccount());
+        Account account = findAccountByIBANForUser(user, command.getAccount());
 
         if (account != null) {
             Card Card = new Card(user, account);
@@ -159,7 +167,7 @@ public class BankSystem {
         if (user == null)
             return;
 
-        Account account = findAccountByIBAN(command.getAccount());
+        Account account = findAccountByIBANForUser(user, command.getAccount());
 
         if (account != null) {
             OneTimeCard oneTimeCard = new OneTimeCard(user, account);
@@ -172,5 +180,44 @@ public class BankSystem {
 
         if (account != null)
             account.deposit(command.getAmount());
+    }
+
+    private Account findAccountByIBANForUser(User user, String iban) {
+        for (Account account : user.getAccounts()) {
+            if (account.getIBAN().equals(iban))
+                return account;
+        }
+        return null;
+    }
+
+    private void deleteAccount(CommandInput command, ArrayNode output) {
+        User user = findUserByEmail(command.getEmail());
+
+        if (user == null)
+            return;
+
+        String IBAN = command.getAccount();
+
+        Account foundAccount = findAccountByIBANForUser(user, IBAN);
+
+        if (foundAccount == null)
+            return;
+
+        if (foundAccount.getBalance() == 0) {
+            user.removeAccount(foundAccount);
+
+            ObjectNode commandResultNode = objectMapper.createObjectNode();
+            commandResultNode.put("command", "deleteAccount");
+
+            ObjectNode outputNode = objectMapper.createObjectNode();
+            outputNode.put("success", "Account deleted");
+            outputNode.put("timestamp", command.getTimestamp());
+
+            commandResultNode.set("output", outputNode);
+
+            commandResultNode.put("timestamp", command.getTimestamp());
+
+            output.add(commandResultNode);
+        }
     }
 }

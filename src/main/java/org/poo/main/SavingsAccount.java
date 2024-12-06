@@ -3,8 +3,8 @@ package org.poo.main;
 public class SavingsAccount extends Account {
     private double interestRate; // dobanda
 
-    public SavingsAccount(String currency, String ownerEmail, double interestRate) {
-        super(currency, "savings", ownerEmail);
+    public SavingsAccount(String currency, String ownerEmail, double interestRate, String IBAN) {
+        super(currency, "savings", ownerEmail, IBAN);
         this.interestRate = interestRate;
     }
 
