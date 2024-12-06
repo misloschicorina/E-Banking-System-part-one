@@ -83,7 +83,17 @@ public final class Main {
             User user = new User(userInput.getFirstName(), userInput.getLastName(), userInput.getEmail());
             bankSystem.addUser(user);
         }
-        
+
+        for (var exchangeRateInput : inputData.getExchangeRates()) {
+            ExchangeRate exchangeRate = new ExchangeRate(
+                    exchangeRateInput.getFrom(),
+                    exchangeRateInput.getTo(),
+                    exchangeRateInput.getRate()
+            );
+            bankSystem.addExchangeRate(exchangeRate);
+        }
+
+        // procesare comenzi
         bankSystem.processCommands(inputData.getCommands(), output);
 
         // pana aici am adaugat eu!

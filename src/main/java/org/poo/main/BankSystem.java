@@ -12,10 +12,15 @@ import java.util.List;
 
 public class BankSystem {
     private final List<User> users = new ArrayList<>();
+    private final List<ExchangeRate> exchangeRates = new ArrayList<>();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public void addUser(User user) {
         users.add(user);
+    }
+
+    public void addExchangeRate(ExchangeRate exchangeRate) {
+        exchangeRates.add(exchangeRate);
     }
 
     public void processCommands(CommandInput[] commands, ArrayNode output) {
@@ -27,6 +32,8 @@ public class BankSystem {
                 case "createOneTimeCard" -> createOneTimeCard(command);
                 case "addFunds" -> addFunds(command);
                 case "deleteAccount" -> deleteAccount(command, output);
+                case "deleteCard" -> deleteCard(command);
+                case "payOnline" -> payOnline(command, output);
                 default -> {
                 }
             }
@@ -156,7 +163,8 @@ public class BankSystem {
         Account account = findAccountByIBANForUser(user, command.getAccount());
 
         if (account != null) {
-            Card Card = new Card(user, account);
+            String cardNumber = org.poo.utils.Utils.generateCardNumber();
+            Card Card = new Card(user, account, cardNumber);
             account.addCard(Card);
         }
     }
@@ -170,7 +178,8 @@ public class BankSystem {
         Account account = findAccountByIBANForUser(user, command.getAccount());
 
         if (account != null) {
-            OneTimeCard oneTimeCard = new OneTimeCard(user, account);
+            String cardNumber = org.poo.utils.Utils.generateCardNumber();
+            OneTimeCard oneTimeCard = new OneTimeCard(user, account, cardNumber);
             account.addCard(oneTimeCard);
         }
     }
@@ -220,4 +229,98 @@ public class BankSystem {
             output.add(commandResultNode);
         }
     }
+
+    private void deleteCard(CommandInput command) {
+        String cardNumber = command.getCardNumber();
+
+        for (User user : users) {
+            for (Account account : user.getAccounts()) {
+                for (Card card : account.getCards()) {
+                    if (card.getCardNumber().equals(cardNumber)) {
+                        account.removeCard(card);
+                        return;
+                    }
+                }
+            }
+        }
+    }
+
+    private double getExchangeRate(String from, String to) {
+        return ExchangeRate.getExchangeRate(from, to, exchangeRates);
+    }
+
+    private void payOnline(CommandInput command, ArrayNode output) {
+        String email = command.getEmail();
+        String cardNumber = command.getCardNumber();
+        double amount = command.getAmount();
+        String currency = command.getCurrency();
+        int timestamp = command.getTimestamp();
+        String description = command.getDescription();
+        String commerciant = command.getCommerciant();
+
+        User user = findUserByEmail(email);
+
+        if (user == null)
+            return;
+
+        Card card = null;
+        Account account = null;
+
+        for (Account acc : user.getAccounts()) {
+            for (Card c : acc.getCards()) {
+                if (c.getCardNumber().equals(cardNumber)) {
+                    card = c;
+                    account = acc;
+                    break;
+                }
+            }
+            if (card != null)
+                break;
+        }
+
+        if (card == null || account == null) {
+            payOnlineError("Card not found", timestamp, output);
+            return;
+        }
+
+        // verifcare moneda si efectuare conversie daca trebuie
+        double finalAmount = amount;
+
+
+        if (!account.getCurrency().equals(currency)) {
+            double rate = getExchangeRate(currency, account.getCurrency());
+            if (rate == 0) {
+                System.out.println("alooo");
+                return;
+            }
+            finalAmount = amount * rate;
+        }
+
+        // verific daca am bani sa cheltui si fac tranzactia
+        if (account.getBalance() >= finalAmount) {
+            account.spend(finalAmount);
+        }
+    }
+
+    private void payOnlineError(String description, int timestamp, ArrayNode output) {
+        ObjectNode errorNode = objectMapper.createObjectNode();
+
+        errorNode.put("command", "payOnline");
+
+        ObjectNode errorOutput = objectMapper.createObjectNode();
+        errorOutput.put("timestamp", timestamp);
+        errorOutput.put("description", description);
+
+        errorNode.set("output", errorOutput);
+
+        errorNode.put("timestamp", timestamp);
+
+        output.add(errorNode);
+    }
+
+
+
+
+
+
 }

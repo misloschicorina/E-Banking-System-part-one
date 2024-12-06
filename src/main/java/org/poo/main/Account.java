@@ -47,12 +47,19 @@ public abstract class Account {
         return ownerEmail;
     }
 
-    // Additional methods
     public void addCard(Card card) {
         this.cards.add(card);
     }
 
+    public void removeCard(Card card) {
+        this.cards.remove(card);
+    }
+
     public void deposit(double amount) {
         this.balance += amount;
+    }
+
+    public void spend(double amount) {
+        this.balance -= amount;
     }
 }
