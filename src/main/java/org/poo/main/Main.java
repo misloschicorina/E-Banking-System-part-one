@@ -83,7 +83,7 @@ public final class Main {
             User user = new User(userInput.getFirstName(), userInput.getLastName(), userInput.getEmail());
             bankSystem.addUser(user);
         }
-        w
+        
         bankSystem.processCommands(inputData.getCommands(), output);
 
         // pana aici am adaugat eu!
