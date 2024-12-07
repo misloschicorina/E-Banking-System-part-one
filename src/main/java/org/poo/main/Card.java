@@ -9,7 +9,6 @@ public class Card {
     public static final String STATUS_ACTIVE = "active";
 
     public Card(User cardOwner, Account account, String cardNumber) {
-//        this.cardNumber = org.poo.utils.Utils.generateCardNumber();
         this.cardNumber = cardNumber;
         this.cardOwner = cardOwner;
         this.account = account;
