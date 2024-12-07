@@ -12,6 +12,7 @@ public abstract class Account {
     private String currency;        // Currency of the account
     private String accountType;     // Can be classic or savings
     private String ownerEmail;      // Email of the owner
+    private String alias;           // Alias for the account, initially null
 
     public Account(String currency, String type, String ownerEmail, String IBAN) {
         this.balance = 0;
@@ -20,6 +21,7 @@ public abstract class Account {
         this.IBAN = IBAN;
         this.accountType = type;
         this.ownerEmail = ownerEmail;
+        this.alias = null;
     }
 
     // Getters in the desired order
@@ -41,6 +43,14 @@ public abstract class Account {
 
     public String getACcountType() {
         return accountType;
+    }
+
+    public String getAlias() {
+        return alias;
+    }
+
+    public void setAlias(String alias) {
+        this.alias = alias;
     }
 
     public String getOwnerEmail() {

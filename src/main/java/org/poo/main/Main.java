@@ -80,7 +80,9 @@ public final class Main {
 
         // parsing the users from input
         for (var userInput : inputData.getUsers()) {
-            User user = new User(userInput.getFirstName(), userInput.getLastName(), userInput.getEmail());
+            User user = new User(userInput.getFirstName(),
+                    userInput.getLastName(),
+                    userInput.getEmail());
             bankSystem.addUser(user);
         }
 

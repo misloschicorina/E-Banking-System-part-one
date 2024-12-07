@@ -34,6 +34,7 @@ public class BankSystem {
                 case "deleteAccount" -> deleteAccount(command, output);
                 case "deleteCard" -> deleteCard(command);
                 case "payOnline" -> payOnline(command, output);
+                case "sendMoney" -> sendMoney(command);
                 default -> {
                 }
             }
@@ -318,8 +319,58 @@ public class BankSystem {
         output.add(errorNode);
     }
 
+    private void sendMoney(CommandInput command) {
+        String senderIBAN = command.getAccount();
+        String receiverIBAN = command.getReceiver();
+        double amount = command.getAmount();
+        String description = command.getDescription();
 
+        Account senderAccount = findAccountByIBAN(senderIBAN);
+        Account receiverAccount = findAccountByIBAN(receiverIBAN);
 
+        // Verific daca ambele conturi exista
+        if (senderAccount == null || receiverAccount == null) {
+            return;
+        }
+
+        // Conversie valutara in moneda receiver ului
+        double finalAmount = amount;
+        if (!senderAccount.getCurrency().equals(receiverAccount.getCurrency())) {
+            double exchangeRate = ExchangeRate.getExchangeRate(
+                    senderAccount.getCurrency(),
+                    receiverAccount.getCurrency(),
+                    exchangeRates
+            );
+            if (exchangeRate == 0)
+                return;
+            finalAmount = amount * exchangeRate;
+        }
+
+        // Verific daca sunt destule fonduri in contul sender ului
+        if (senderAccount.getBalance() < amount)
+            return;
+
+        // Fac transfer:
+        senderAccount.spend(amount);
+        receiverAccount.deposit(finalAmount);
+    }
+
+    private void setAlias(CommandInput command) {
+        String email = command.getEmail();
+        String alias = command.getAlias();
+        String IBAN = command.getAccount();
+
+        User user = findUserByEmail(email);
+
+        if (user == null)
+            return;
+
+        Account account = findAccountByIBANForUser(user, IBAN);
+        if (account == null)
+            return;
+
+        account.setAlias(alias);
+    }
 
 
 
