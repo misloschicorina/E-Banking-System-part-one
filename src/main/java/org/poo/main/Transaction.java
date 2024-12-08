@@ -1,5 +1,8 @@
 package org.poo.main;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class Transaction {
     private int timestamp;
     private String description;
@@ -12,12 +15,13 @@ public class Transaction {
     private String accountIBAN;
     private String commerciant;
     private String currency;
-    private String email; // New field for email
+    private String email;
+    private List<String> involvedAccounts;
 
     // Constructor with email field
     Transaction(int timestamp, String description, String senderIBAN, String receiverIBAN,
                 Double amount, String currency, String transferType, String cardNumber,
-                String cardHolder, String accountIBAN, String commerciant, String email) {
+                String cardHolder, String accountIBAN, String commerciant, String email, List<String> involvedAccounts) {
         this.timestamp = timestamp;
         this.description = description;
         this.senderIBAN = senderIBAN;
@@ -29,10 +33,10 @@ public class Transaction {
         this.cardHolder = cardHolder;
         this.accountIBAN = accountIBAN;
         this.commerciant = commerciant;
-        this.email = email; // Initialize email
+        this.email = email;
+        this.involvedAccounts = involvedAccounts;
     }
 
-    // Getters
     public int getTimestamp() {
         return timestamp;
     }
@@ -81,34 +85,19 @@ public class Transaction {
         return email;
     }
 
-    // Add transaction to a user's transaction list
-    public void addTransaction(User user) {
-        if (user == null) {
-            return; // Cannot add the transaction if the user is null
-        }
-        user.addTransaction(this);
-    }
-
-    // Setter for description
     public void setDescription(String description) {
         this.description = description;
     }
 
-    @Override
-    public String toString() {
-        return "Transaction{" +
-                "timestamp=" + timestamp +
-                ", description='" + description + '\'' +
-                ", senderIBAN='" + senderIBAN + '\'' +
-                ", receiverIBAN='" + receiverIBAN + '\'' +
-                ", amount=" + amount +
-                ", currency='" + currency + '\'' +
-                ", transferType='" + transferType + '\'' +
-                ", cardNumber='" + cardNumber + '\'' +
-                ", cardHolder='" + cardHolder + '\'' +
-                ", accountIBAN='" + accountIBAN + '\'' +
-                ", commerciant='" + commerciant + '\'' +
-                ", email='" + email + '\'' +
-                '}';
+    public List<String> getInvolvedAccounts() {
+        return involvedAccounts;
     }
+
+    // Add transaction to a user's transaction list
+    public void addTransaction(User user) {
+        if (user == null)
+            return;
+        user.addTransaction(this);
+    }
+
 }

@@ -7,6 +7,7 @@ public class Card {
     private String status;
 
     public static final String STATUS_ACTIVE = "active";
+    public static final String STATUS_INACTIVE = "frozen";
 
     public Card(User cardOwner, Account account, String cardNumber) {
         this.cardNumber = cardNumber;
@@ -30,5 +31,13 @@ public class Card {
 
     public String getStatus() {
         return status;
+    }
+
+    public boolean isOneTimeCard() {
+        return false;
+    }
+
+    public void freezeCard() {
+        this.status = STATUS_INACTIVE;
     }
 }

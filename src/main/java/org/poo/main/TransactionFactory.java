@@ -1,71 +1,130 @@
 package org.poo.main;
 
+import java.util.List;
+
 public class TransactionFactory {
 
     private TransactionFactory() {
-        // Constructor privat pentru a preveni instanțierea
     }
 
-    public static Transaction createAccountTransaction(int timestamp, String accountIBAN) {
-        return new Transaction(timestamp, "New account created", null, null, null,
-                null, null, null, null, null, null, null);
-    }
-
-    public static Transaction createCardTransaction(int timestamp, String cardNumber, String email, String accountIBAN) {
-        return new Transaction(timestamp, "New card created", null, null, null,
-                null, null, cardNumber, email, accountIBAN, null, null);
-    }
-
-    public static Transaction createSentMoneyTransaction(int timestamp, String senderIBAN, String receiverIBAN,
-                                                         Double amount, String currency) {
-        return new Transaction(timestamp, "Money sent", senderIBAN, receiverIBAN, amount,
-                currency, "sent", null, null, null, null, null);
-    }
-
-    public static Transaction createReceivedMoneyTransaction(int timestamp, String senderIBAN, String receiverIBAN,
-                                                             Double amount, String currency) {
-        return new Transaction(timestamp, "Money received", senderIBAN, receiverIBAN, amount,
-                currency, "received", null, null, null, null, null);
-    }
-
-    public static Transaction createOnlinePaymentTransaction(int timestamp, String cardNumber,
-                                                             Double amount, String commerciant) {
-        return new Transaction(timestamp, "Card payment", null, null, amount,
-                null, null, null, null, null, commerciant, null);
-    }
-
-    public static Transaction createOnlinePaymentFailureTransaction(int timestamp, String description) {
+    public static Transaction createAccountTransaction(
+            int timestamp, String accountIBAN) {
         return new Transaction(
-                timestamp, // timestamp
-                description, // description
-                null, // senderIBAN
-                null, // receiverIBAN
-                null, // amount
-                null, // currency
-                null, // transferType
-                null, // cardNumber
-                null, // cardHolder
-                null, // accountIBAN
-                null, // commerciant
-                null // email
+                timestamp,
+                "New account created",
+                null, null, null, null,
+                null, null, null, null,
+                null, null, null
         );
     }
 
-    public static Transaction createDeletedCardTransaction(int timestamp, String accountIBAN, String cardNumber, String email) {
+    public static Transaction createCardTransaction(
+            int timestamp, String cardNumber,
+            String email, String accountIBAN) {
         return new Transaction(
-                timestamp, // timestamp
-                "The card has been destroyed", // description
-                null, // senderIBAN
-                null, // receiverIBAN
-                null, // amount
-                null, // currency
-                null, // transferType
-                cardNumber, // cardNumber
-                email, // cardHolder (email in this context)
-                accountIBAN, // accountIBAN
-                null, // commerciant
-                null // email (separate from cardHolder)
+                timestamp,
+                "New card created",
+                null, null, null, null,
+                null, cardNumber, email,
+                accountIBAN, null, null, null
         );
     }
 
+    public static Transaction createSentMoneyTransaction(
+            int timestamp, String senderIBAN,
+            String receiverIBAN, Double amount,
+            String currency) {
+        return new Transaction(
+                timestamp,
+                "Money sent",
+                senderIBAN, receiverIBAN,
+                amount, currency,
+                "sent", null, null,
+                null, null, null, null
+        );
+    }
+
+    public static Transaction createReceivedMoneyTransaction(
+            int timestamp, String senderIBAN,
+            String receiverIBAN, Double amount,
+            String currency) {
+        return new Transaction(
+                timestamp,
+                "Money received",
+                senderIBAN, receiverIBAN,
+                amount, currency,
+                "received", null, null,
+                null, null, null, null
+        );
+    }
+
+    public static Transaction createOnlinePaymentTransaction(
+            int timestamp, String cardNumber,
+            Double amount, String commerciant) {
+        return new Transaction(
+                timestamp,
+                "Card payment",
+                null, null, amount,
+                null, null, null, null,
+                null, commerciant, null, null
+        );
+    }
+
+    public static Transaction createInsuffiecientFundsTransaction(
+            int timestamp) {
+        return new Transaction(
+                timestamp,
+                "Insufficient funds",
+                null, null, null, null,
+                null, null, null, null,
+                null, null, null
+        );
+    }
+
+    public static Transaction createDeletedCardTransaction(
+            int timestamp, String accountIBAN,
+            String cardNumber, String email) {
+        return new Transaction(
+                timestamp,
+                "The card has been destroyed",
+                null, null, null, null,
+                null, cardNumber, email,
+                accountIBAN, null, null, null
+        );
+    }
+
+    public static Transaction createWarningTransaction(
+            int timestamp) {
+        return new Transaction(
+                timestamp,
+                "You have reached the minimum amount "
+                        + "of funds, the card will be frozen",
+                null, null, null, null,
+                null, null, null, null,
+                null, null, null
+        );
+    }
+
+    public static Transaction createCardFrozenErrorTransaction(
+            int timestamp) {
+        return new Transaction(
+                timestamp,
+                "The card is frozen",
+                null, null, null, null,
+                null, null, null, null,
+                null, null, null
+        );
+    }
+
+    public static Transaction createSuccessSplitTransaction(int timestamp, double amount, double splitAmount,
+                                                            String currency, List<String> accounts) {
+        String formattedAmount = String.format("%.2f", amount);
+        return new Transaction(
+                timestamp,
+                "Split payment of " + formattedAmount + " " + currency,
+                null, null, splitAmount, currency,
+                null, null, null, null,
+                null, null, accounts
+        );
+    }
 }

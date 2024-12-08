@@ -13,6 +13,7 @@ public abstract class Account {
     private String accountType;     // Can be classic or savings
     private String ownerEmail;      // Email of the owner
     private String alias;           // Alias for the account, initially null
+    private double minBalance;
 
     public Account(String currency, String type, String ownerEmail, String IBAN) {
         this.balance = 0;
@@ -22,6 +23,7 @@ public abstract class Account {
         this.accountType = type;
         this.ownerEmail = ownerEmail;
         this.alias = null;
+        this.minBalance = 0;
     }
 
     // Getters in the desired order
@@ -71,5 +73,13 @@ public abstract class Account {
 
     public void spend(double amount) {
         this.balance -= amount;
+    }
+
+    public double getMinBalance() {
+        return minBalance;
+    }
+
+    public void setMinBalance(double minBalance) {
+        this.minBalance = minBalance;
     }
 }

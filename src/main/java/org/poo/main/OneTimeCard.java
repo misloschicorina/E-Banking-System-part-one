@@ -11,4 +11,13 @@ public class OneTimeCard extends Card {
     public boolean isUsed() {
         return used;
     }
+
+    public void markAsUsed() {
+        this.used = true;
+    }
+
+    @Override
+    public boolean isOneTimeCard() {
+        return true;
+    }
 }
