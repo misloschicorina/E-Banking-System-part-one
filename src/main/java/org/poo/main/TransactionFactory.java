@@ -14,7 +14,8 @@ public class TransactionFactory {
                 "New account created",
                 null, null, null, null,
                 null, null, null, accountIBAN,
-                null, null, null
+                null, null, null,
+                null // Error set to null
         );
     }
 
@@ -26,7 +27,8 @@ public class TransactionFactory {
                 "New card created",
                 null, null, null, null,
                 null, cardNumber, email,
-                accountIBAN, null, null, null
+                accountIBAN, null, null, null,
+                null // Error set to null
         );
     }
 
@@ -40,7 +42,8 @@ public class TransactionFactory {
                 senderIBAN, receiverIBAN,
                 amount, currency,
                 "sent", null, null,
-                null, null, null, null
+                null, null, null, null,
+                null // Error set to null
         );
     }
 
@@ -54,7 +57,8 @@ public class TransactionFactory {
                 senderIBAN, receiverIBAN,
                 amount, currency,
                 "received", null, null,
-                null, null, null, null
+                null, null, null, null,
+                null // Error set to null
         );
     }
 
@@ -66,7 +70,8 @@ public class TransactionFactory {
                 "Card payment",
                 null, null, amount,
                 null, null, null, null,
-                accountIBAN, commerciant, null, null
+                accountIBAN, commerciant, null, null,
+                null // Error set to null
         );
     }
 
@@ -77,7 +82,8 @@ public class TransactionFactory {
                 "Insufficient funds",
                 null, null, null, null,
                 null, null, null, accountIBAN,
-                null, null, null
+                null, null, null,
+                null // Error set to null
         );
     }
 
@@ -89,7 +95,8 @@ public class TransactionFactory {
                 "The card has been destroyed",
                 null, null, null, null,
                 null, cardNumber, email,
-                accountIBAN, null, null, null
+                accountIBAN, null, null, null,
+                null // Error set to null
         );
     }
 
@@ -101,7 +108,8 @@ public class TransactionFactory {
                         + "of funds, the card will be frozen",
                 null, null, null, null,
                 null, null, null, accountIBAN,
-                null, null, null
+                null, null, null,
+                null // Error set to null
         );
     }
 
@@ -112,19 +120,37 @@ public class TransactionFactory {
                 "The card is frozen",
                 null, null, null, null,
                 null, null, null, accountIBAN,
-                null, null, null
+                null, null, null,
+                null // Error set to null
         );
     }
 
-    public static Transaction createSuccessSplitTransaction(int timestamp, double amount, double splitAmount,
-                                                            String currency, List<String> accounts) {
+    public static Transaction createSuccessSplitTransaction(
+            int timestamp, double amount, double splitAmount,
+            String currency, List<String> accounts) {
         String formattedAmount = String.format("%.2f", amount);
         return new Transaction(
                 timestamp,
                 "Split payment of " + formattedAmount + " " + currency,
                 null, null, splitAmount, currency,
                 null, null, null, null,
-                null, null, accounts
+                null, null, accounts,
+                null // Error set to null
         );
     }
+
+    public static Transaction createSplitErrorTransaction(
+            double totalAmount,
+            int timestamp, double splitAmount, String currency, String cheapIBAN, List<String> accounts) {
+        return new Transaction(
+                timestamp,
+                "Split payment of " + String.format("%.2f", splitAmount) + " " + currency,
+                null, null, totalAmount, currency,
+                null, null, null, null,
+                null,
+                null,
+                accounts, "Account " + cheapIBAN + " has insufficient funds for a split payment."
+        );
+    }
+
 }

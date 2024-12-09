@@ -104,7 +104,7 @@ public class Tools {
         return finalAmount;
     }
 
-    public static ArrayNode getTransactions(List<Transaction> transactions){
+    public static ArrayNode getTransactions(List<Transaction> transactions) {
         ArrayNode transactionsArray = objectMapper.createArrayNode();
         for (Transaction transaction : transactions) {
             ObjectNode transactionNode = objectMapper.createObjectNode();
@@ -121,14 +121,18 @@ public class Tools {
                 }
 
                 transactionNode.put("description", transaction.getDescription());
-
                 transactionNode.put("amount", transaction.getAmount());
                 transactionNode.put("currency", transaction.getCurrency());
                 transactionNode.set("involvedAccounts", involvedAccountsArray);
+
+                // Check if there is an error field
+                if (transaction.getError() != null) {
+                    transactionNode.put("error", transaction.getError());
+                }
             } else {
                 // Add other fields conditionally
                 if (transaction.getDescription().equals("The card has been destroyed")
-                || transaction.getDescription().equals("New card created")) {
+                        || transaction.getDescription().equals("New card created")) {
                     transactionNode.put("account", transaction.getAccountIBAN());
                 }
                 if (transaction.getCardNumber() != null) {
@@ -165,6 +169,7 @@ public class Tools {
         }
         return transactionsArray;
     }
+
 
     public static ObjectNode generateReportData(
             CommandInput command,
@@ -227,17 +232,23 @@ public class Tools {
         // Adaugă comercianții dacă este cazul
         if (includeCommerciants && commerciantsTotals != null) {
             ArrayNode commerciantsArray = objectMapper.createArrayNode();
-            for (Map.Entry<String, Double> entry : commerciantsTotals.entrySet()) {
-                ObjectNode commerciantNode = objectMapper.createObjectNode();
-                commerciantNode.put("commerciant", entry.getKey());
-                commerciantNode.put("total", entry.getValue());
-                commerciantsArray.add(commerciantNode);
-            }
+
+            // Sortare comercianți după suma totală descrescător
+            commerciantsTotals.entrySet().stream()
+                    .sorted((e1, e2) -> Double.compare(e2.getValue(), e1.getValue()))
+                    .forEach(entry -> {
+                        ObjectNode commerciantNode = objectMapper.createObjectNode();
+                        commerciantNode.put("commerciant", entry.getKey());
+                        commerciantNode.put("total", entry.getValue());
+                        commerciantsArray.add(commerciantNode);
+                    });
+
             outputNode.set("commerciants", commerciantsArray);
         }
 
         return outputNode;
     }
+
 
     private static ObjectNode createErrorNode(CommandInput command, String message) {
         ObjectMapper objectMapper = new ObjectMapper();

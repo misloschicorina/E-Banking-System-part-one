@@ -172,6 +172,20 @@ public class BankSystem {
         user.addTransaction(splitTransaction);
     }
 
+    public void createSplitErrorTransaction(
+            double splitAmount, int timestamp, double totalAmount, String currency, String cheapIBAN, List<String> accounts, User user) {
+        if (user == null || accounts == null || accounts.isEmpty() || cheapIBAN == null || currency == null)
+            return;
+
+        // Creează tranzacția de eroare pentru split
+        Transaction transaction = TransactionFactory.createSplitErrorTransaction(
+                splitAmount, timestamp, totalAmount, currency, cheapIBAN, accounts);
+
+        // Adaugă tranzacția în lista utilizatorului
+        user.addTransaction(transaction); // Această linie trebuie să existe!
+    }
+
+
     void addAccount(CommandInput command) {
         User user = Tools.findUserByEmail(command.getEmail(), users);
         if (user == null)
@@ -405,6 +419,9 @@ public class BankSystem {
             // Create a transaction for the new card
             createCardTransaction(timestamp, newOneTimeCard, account, user);
         }
+
+        if (oneTimeCard.isUsed() == true)
+            account.removeCard(oneTimeCard);
     }
 
 
@@ -494,22 +511,23 @@ public class BankSystem {
             return;
         }
 
-        // Create the result node for transaction output
+        // Creează nodul rezultat pentru outputul tranzacțiilor
         ObjectNode resultNode = objectMapper.createObjectNode();
         resultNode.put("command", "printTransactions");
         resultNode.put("timestamp", timestamp);
 
-        // Sort the user's transactions by timestamp
+        // Sortează tranzacțiile utilizatorului
         List<Transaction> transactions = new ArrayList<>(user.getTransactions());
         transactions.sort((t1, t2) -> Integer.compare(t1.getTimestamp(), t2.getTimestamp()));
 
-        // Create the array node for the transactions
+        // Obține nodurile tranzacțiilor
         ArrayNode transactionsArray = Tools.getTransactions(transactions);
 
-        // Add the transactions array to the result node
+        // Adaugă nodul tranzacțiilor în rezultatul final
         resultNode.set("output", transactionsArray);
         output.add(resultNode);
     }
+
 
     private void setMinimumBalance(CommandInput command) {
         String IBAN = command.getAccount();
@@ -566,13 +584,13 @@ public class BankSystem {
     private void splitPayment(CommandInput command) {
         List<String> ibans = command.getAccounts();
         double totalAmount = command.getAmount();
-        ;
         double splitAmount = totalAmount / ibans.size();
         String currency = command.getCurrency();
         int timestamp = command.getTimestamp();
 
         boolean canDoSplit = true;
         String cheapIBAN = null;
+
         for (String IBAN : ibans) {
             Account account = Tools.findAccountByIBAN(IBAN, users);
             double finalSplitAmount = Tools.calculateFinalAmount(account, splitAmount, exchangeRates, currency);
@@ -580,7 +598,7 @@ public class BankSystem {
             if (account.getBalance() < finalSplitAmount) {
                 canDoSplit = false;
                 cheapIBAN = IBAN;
-                break;
+                 // break;
             }
         }
 
@@ -592,9 +610,22 @@ public class BankSystem {
                 account.spend(finalSplitAmount);
                 createSuccessSplitTransaction(timestamp, totalAmount, splitAmount, currency, ibans, currUser);
             }
-        }
+        } else {
+            // Create a split error transaction and associate it with the involved accounts
+            Transaction splitErrorTransaction = TransactionFactory.createSplitErrorTransaction(
+                    splitAmount, timestamp, totalAmount, currency, cheapIBAN, ibans
+            );
 
+            // Add the transaction to the affected user's transaction list
+            for (String IBAN : ibans) {
+                User user = Tools.findUserByAccount(IBAN, users);
+                if (user != null) {
+                    user.addTransaction(splitErrorTransaction);
+                }
+            }
+        }
     }
+
 
     private void report(CommandInput command, ArrayNode output) {
         ObjectNode reportNode = objectMapper.createObjectNode();

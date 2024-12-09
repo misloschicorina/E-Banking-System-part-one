@@ -60,7 +60,9 @@ public abstract class Account {
     }
 
     public void addCard(Card card) {
-        this.cards.add(card);
+        if (!cards.contains(card)) { // Verificare dacă cardul există deja
+            cards.add(card);
+        }
     }
 
     public void removeCard(Card card) {

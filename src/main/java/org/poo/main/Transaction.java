@@ -17,11 +17,13 @@ public class Transaction {
     private String currency;
     private String email;
     private List<String> involvedAccounts;
+    private String error;
 
     // Constructor with email field
-    Transaction(int timestamp, String description, String senderIBAN, String receiverIBAN,
-                Double amount, String currency, String transferType, String cardNumber,
-                String cardHolder, String accountIBAN, String commerciant, String email, List<String> involvedAccounts) {
+    public Transaction(int timestamp, String description, String senderIBAN, String receiverIBAN,
+                       Double amount, String currency, String transferType, String cardNumber,
+                       String cardHolder, String accountIBAN, String commerciant, String email,
+                       List<String> involvedAccounts, String error) {
         this.timestamp = timestamp;
         this.description = description;
         this.senderIBAN = senderIBAN;
@@ -35,6 +37,7 @@ public class Transaction {
         this.commerciant = commerciant;
         this.email = email;
         this.involvedAccounts = involvedAccounts;
+        this.error = error; // Initialize error field
     }
 
     public int getTimestamp() {
@@ -98,6 +101,10 @@ public class Transaction {
         if (user == null)
             return;
         user.addTransaction(this);
+    }
+
+    public String getError() { // Getter for error field
+        return error;
     }
 
 }
