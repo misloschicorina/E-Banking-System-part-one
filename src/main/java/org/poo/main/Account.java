@@ -82,4 +82,9 @@ public abstract class Account {
     public void setMinBalance(double minBalance) {
         this.minBalance = minBalance;
     }
+
+    public void clearCards() {
+        this.cards.clear();
+    }
+
 }

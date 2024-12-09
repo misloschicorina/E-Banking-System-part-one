@@ -13,7 +13,7 @@ public class TransactionFactory {
                 timestamp,
                 "New account created",
                 null, null, null, null,
-                null, null, null, null,
+                null, null, null, accountIBAN,
                 null, null, null
         );
     }
@@ -60,23 +60,23 @@ public class TransactionFactory {
 
     public static Transaction createOnlinePaymentTransaction(
             int timestamp, String cardNumber,
-            Double amount, String commerciant) {
+            Double amount, String commerciant, String accountIBAN) {
         return new Transaction(
                 timestamp,
                 "Card payment",
                 null, null, amount,
                 null, null, null, null,
-                null, commerciant, null, null
+                accountIBAN, commerciant, null, null
         );
     }
 
     public static Transaction createInsuffiecientFundsTransaction(
-            int timestamp) {
+            int timestamp, String accountIBAN) {
         return new Transaction(
                 timestamp,
                 "Insufficient funds",
                 null, null, null, null,
-                null, null, null, null,
+                null, null, null, accountIBAN,
                 null, null, null
         );
     }
@@ -94,24 +94,24 @@ public class TransactionFactory {
     }
 
     public static Transaction createWarningTransaction(
-            int timestamp) {
+            int timestamp, String accountIBAN) {
         return new Transaction(
                 timestamp,
                 "You have reached the minimum amount "
                         + "of funds, the card will be frozen",
                 null, null, null, null,
-                null, null, null, null,
+                null, null, null, accountIBAN,
                 null, null, null
         );
     }
 
     public static Transaction createCardFrozenErrorTransaction(
-            int timestamp) {
+            int timestamp, String accountIBAN) {
         return new Transaction(
                 timestamp,
                 "The card is frozen",
                 null, null, null, null,
-                null, null, null, null,
+                null, null, null, accountIBAN,
                 null, null, null
         );
     }

@@ -7,7 +7,6 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.poo.fileio.CommandInput;
 
-import javax.tools.Tool;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -41,6 +40,8 @@ public class BankSystem {
                 case "setMinimumBalance" -> setMinimumBalance(command);
                 case "checkCardStatus" -> checkCardStatus(command, output);
                 case "splitPayment" -> splitPayment(command);
+                case "report" -> report(command, output);
+                case "spendingsReport" -> spendingsReport(command, output);
                 default -> {
                 }
             }
@@ -94,11 +95,11 @@ public class BankSystem {
     }
 
     // Creare tranzacție pentru "Card payment"
-    public void createOnlinePaymentTransaction(int timestamp, Card card, double amount, String commerciant, User user) {
+    public void createOnlinePaymentTransaction(int timestamp, Card card, double amount, String commerciant, User user, String IBAN) {
         if (user == null || card == null)
             return;
 
-        Transaction transaction = TransactionFactory.createOnlinePaymentTransaction(timestamp, card.getCardNumber(), amount, commerciant);
+        Transaction transaction = TransactionFactory.createOnlinePaymentTransaction(timestamp, card.getCardNumber(), amount, commerciant, IBAN);
         user.addTransaction(transaction);
     }
 
@@ -133,12 +134,12 @@ public class BankSystem {
         receiverUser.addTransaction(receivedTransaction);
     }
 
-    public void createInsuffiecientFundsTransaction(int timestamp, String description, User user) {
+    public void createInsuffiecientFundsTransaction(int timestamp, String description, User user, String IBAN) {
         if (user == null)
             return;
 
         // Create a failed transaction
-        Transaction failureTransaction = TransactionFactory.createInsuffiecientFundsTransaction(timestamp);
+        Transaction failureTransaction = TransactionFactory.createInsuffiecientFundsTransaction(timestamp, IBAN);
         // Add the transaction to the user's transaction list
         user.addTransaction(failureTransaction);
     }
@@ -156,13 +157,13 @@ public class BankSystem {
         user.addTransaction(transaction);
     }
 
-    private void createWarningTransaction(int timestamp, User user) {
-        Transaction warningTransaction = TransactionFactory.createWarningTransaction(timestamp);
+    private void createWarningTransaction(int timestamp, User user, String IBAN) {
+        Transaction warningTransaction = TransactionFactory.createWarningTransaction(timestamp, IBAN);
         user.addTransaction(warningTransaction);
     }
 
-    private void createCardFrozenTransaction(int timestamp, User user) {
-        Transaction frozenTransaction = TransactionFactory.createCardFrozenErrorTransaction(timestamp);
+    private void createCardFrozenTransaction(int timestamp, User user, String IBAN) {
+        Transaction frozenTransaction = TransactionFactory.createCardFrozenErrorTransaction(timestamp, IBAN);
         user.addTransaction(frozenTransaction);
     }
 
@@ -253,9 +254,27 @@ public class BankSystem {
         if (foundAccount == null)
             return;
 
+        // Verifică dacă soldul este zero
         if (foundAccount.getBalance() == 0) {
+            // Distruge toate cardurile asociate
+            List<Card> associatedCards = foundAccount.getCards(); // Se presupune că Account are metoda getCards()
+            for (Card card : associatedCards) {
+                String cardNumber = card.getCardNumber();
+                String email = user.getEmail();
+
+                // Creează tranzacție pentru distrugerea cardului
+                Transaction deleteCardTransaction = TransactionFactory.createDeletedCardTransaction(
+                        command.getTimestamp(), IBAN, cardNumber, email);
+                user.addTransaction(deleteCardTransaction); // Se presupune că User are metoda addTransaction()
+            }
+
+            // Elimină toate cardurile asociate contului
+            foundAccount.clearCards(); // Se presupune că Account are metoda clearCards()
+
+            // Elimină contul
             user.removeAccount(foundAccount);
 
+            // Creare răspuns de succes
             ObjectNode commandResultNode = objectMapper.createObjectNode();
             commandResultNode.put("command", "deleteAccount");
 
@@ -337,7 +356,7 @@ public class BankSystem {
         }
 
         if (card.getStatus().equals("frozen")) {
-            createCardFrozenTransaction(timestamp, user);
+            createCardFrozenTransaction(timestamp, user, account.getIBAN());
             return;
         }
 
@@ -354,19 +373,19 @@ public class BankSystem {
 
         if (balance >= finalAmount) {
 
-            if(balance <= account.getMinBalance()){
-                createWarningTransaction(timestamp, user);
+            if (balance <= account.getMinBalance()) {
+                createWarningTransaction(timestamp, user, account.getIBAN());
                 card.freezeCard();
                 return;
             }
 
             account.spend(finalAmount);
-            createOnlinePaymentTransaction(timestamp, card, finalAmount, commerciant, user);
+            createOnlinePaymentTransaction(timestamp, card, finalAmount, commerciant, user, account.getIBAN());
 
             if (card.isOneTimeCard())
-                    handleOneTimeCard(user, card, account, timestamp);
+                handleOneTimeCard(user, card, account, timestamp);
         } else {
-            createInsuffiecientFundsTransaction(timestamp, "Insufficient funds", user);
+            createInsuffiecientFundsTransaction(timestamp, "Insufficient funds", user, account.getIBAN());
         }
     }
 
@@ -435,7 +454,7 @@ public class BankSystem {
         // Verific daca senderul are fonduri destule
         if (senderAccount.getBalance() < amount) {
             User user = Tools.findUserByAccount(senderIBAN, users);
-            createInsuffiecientFundsTransaction(timestamp, "Insufficient funds", user);
+            createInsuffiecientFundsTransaction(timestamp, "Insufficient funds", user, senderIBAN);
             return;
         }
 
@@ -485,63 +504,7 @@ public class BankSystem {
         transactions.sort((t1, t2) -> Integer.compare(t1.getTimestamp(), t2.getTimestamp()));
 
         // Create the array node for the transactions
-        ArrayNode transactionsArray = objectMapper.createArrayNode();
-        for (Transaction transaction : transactions) {
-            ObjectNode transactionNode = objectMapper.createObjectNode();
-
-            // Add common fields for all transactions
-            transactionNode.put("description", transaction.getDescription());
-            transactionNode.put("timestamp", transaction.getTimestamp());
-
-            // Check if the transaction involves split payment
-            if (transaction.getInvolvedAccounts() != null && !transaction.getInvolvedAccounts().isEmpty()) {
-                ArrayNode involvedAccountsArray = objectMapper.createArrayNode();
-                for (String account : transaction.getInvolvedAccounts()) {
-                    involvedAccountsArray.add(account);
-                }
-
-                transactionNode.put("description", transaction.getDescription());
-
-                transactionNode.put("amount", transaction.getAmount());
-                transactionNode.put("currency", transaction.getCurrency());
-                transactionNode.set("involvedAccounts", involvedAccountsArray);
-            } else {
-                // Add other fields conditionally
-                if (transaction.getAccountIBAN() != null) {
-                    transactionNode.put("account", transaction.getAccountIBAN());
-                }
-                if (transaction.getCardNumber() != null) {
-                    transactionNode.put("card", transaction.getCardNumber());
-                }
-                if (transaction.getCardHolder() != null) {
-                    transactionNode.put("cardHolder", transaction.getCardHolder());
-                }
-                if (transaction.getAmount() != null) {
-                    if ("Card payment".equals(transaction.getDescription())) {
-                        transactionNode.put("amount", transaction.getAmount());
-                    } else {
-                        String formattedAmount = String.format("%.1f %s",
-                                transaction.getAmount(), transaction.getCurrency());
-                        transactionNode.put("amount", formattedAmount);
-                    }
-                }
-                if (transaction.getSenderIBAN() != null) {
-                    transactionNode.put("senderIBAN", transaction.getSenderIBAN());
-                }
-                if (transaction.getReceiverIBAN() != null) {
-                    transactionNode.put("receiverIBAN", transaction.getReceiverIBAN());
-                }
-                if (transaction.getTransferType() != null) {
-                    transactionNode.put("transferType", transaction.getTransferType());
-                }
-                if (transaction.getCommerciant() != null) {
-                    transactionNode.put("commerciant", transaction.getCommerciant());
-                }
-            }
-
-            // Add the transaction node to the array
-            transactionsArray.add(transactionNode);
-        }
+        ArrayNode transactionsArray = Tools.getTransactions(transactions);
 
         // Add the transactions array to the result node
         resultNode.set("output", transactionsArray);
@@ -594,34 +557,35 @@ public class BankSystem {
             return;
         }
 
-        if(foundAccount.getBalance() - foundAccount.getMinBalance() <= 30) {
-            createWarningTransaction(timestamp, foundUser);
+        if (foundAccount.getBalance() - foundAccount.getMinBalance() <= 30) {
+            createWarningTransaction(timestamp, foundUser, foundAccount.getIBAN());
             foundCard.freezeCard();
         }
     }
 
     private void splitPayment(CommandInput command) {
         List<String> ibans = command.getAccounts();
-        double totalAmount = command.getAmount();;
+        double totalAmount = command.getAmount();
+        ;
         double splitAmount = totalAmount / ibans.size();
         String currency = command.getCurrency();
         int timestamp = command.getTimestamp();
 
         boolean canDoSplit = true;
         String cheapIBAN = null;
-        for(String IBAN : ibans){
+        for (String IBAN : ibans) {
             Account account = Tools.findAccountByIBAN(IBAN, users);
             double finalSplitAmount = Tools.calculateFinalAmount(account, splitAmount, exchangeRates, currency);
 
-            if(account.getBalance() < finalSplitAmount){
+            if (account.getBalance() < finalSplitAmount) {
                 canDoSplit = false;
                 cheapIBAN = IBAN;
                 break;
             }
         }
 
-        if(canDoSplit){
-            for(String IBAN : ibans) {
+        if (canDoSplit) {
+            for (String IBAN : ibans) {
                 Account account = Tools.findAccountByIBAN(IBAN, users);
                 User currUser = Tools.findUserByAccount(IBAN, users);
                 double finalSplitAmount = Tools.calculateFinalAmount(account, splitAmount, exchangeRates, currency);
@@ -632,6 +596,36 @@ public class BankSystem {
 
     }
 
+    private void report(CommandInput command, ArrayNode output) {
+        ObjectNode reportNode = objectMapper.createObjectNode();
+        reportNode.put("command", command.getCommand());
+
+        TransactionFilter filter = new ReportTransactionFilter();
+        ObjectNode outputNode = Tools.generateReportData(command, filter, false, users, exchangeRates);
+
+        reportNode.set("output", outputNode);
+        reportNode.put("timestamp", command.getTimestamp());
+
+        output.add(reportNode);
+    }
+
+    private void spendingsReport(CommandInput command, ArrayNode output) {
+        ObjectNode reportNode = objectMapper.createObjectNode();
+        reportNode.put("command", command.getCommand());
+
+        TransactionFilter filter = new SpendingsTransactionFilter();
+        ObjectNode outputNode = Tools.generateReportData(command, filter, true, users, exchangeRates);
+
+        reportNode.set("output", outputNode);
+        reportNode.put("timestamp", command.getTimestamp());
+
+        output.add(reportNode);
+    }
+
+
+
 }
+
+
 
 
