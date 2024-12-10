@@ -50,12 +50,18 @@ public class TransactionFactory {
     public static Transaction createReceivedMoneyTransaction(
             int timestamp, String senderIBAN,
             String receiverIBAN, Double amount,
-            String currency) {
+            Double exchangeRate, String currency,
+            String description) {
+
+        // Calculează amount-ul final folosind rata de schimb
+        double finalAmount = amount * exchangeRate;
+
+        // Creează tranzacția
         return new Transaction(
                 timestamp,
-                "Money received",
+                description,
                 senderIBAN, receiverIBAN,
-                amount, currency,
+                finalAmount, currency,
                 "received", null, null,
                 null, null, null, null,
                 null // Error set to null
@@ -152,5 +158,25 @@ public class TransactionFactory {
                 accounts, "Account " + cheapIBAN + " has insufficient funds for a split payment."
         );
     }
+
+    public static Transaction deleteAccountErrorTransaction(int timestamp) {
+        return new Transaction(
+                timestamp,
+                "Account couldn't be deleted - there are funds remaining",
+                null, // Sender IBAN
+                null, // Receiver IBAN
+                null, // Amount
+                null, // Currency
+                null, // Transfer type
+                null, // Card number
+                null, // Email
+                null, // Account IBAN
+                null, // Commerciant
+                null, // Card holder
+                null, // Involved accounts
+                null  // Error message
+        );
+    }
+
 
 }

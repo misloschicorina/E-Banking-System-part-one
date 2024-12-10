@@ -8,7 +8,9 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.poo.fileio.CommandInput;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class BankSystem {
     private final List<User> users = new ArrayList<>();
@@ -42,6 +44,8 @@ public class BankSystem {
                 case "splitPayment" -> splitPayment(command);
                 case "report" -> report(command, output);
                 case "spendingsReport" -> spendingsReport(command, output);
+                case "addInterest" -> addInterest(command, output);
+                case "changeInterestRate" -> changeInterestRate(command, output);
                 default -> {
                 }
             }
@@ -84,6 +88,18 @@ public class BankSystem {
         user.addTransaction(transaction);
     }
 
+    public void createDeleteAccountErrorTransaction(int timestamp, User user) {
+        if (user == null)
+            return;
+
+        // Creează tranzacția de eroare pentru ștergerea contului
+        Transaction transaction = TransactionFactory.deleteAccountErrorTransaction(timestamp);
+
+        // Adaugă tranzacția în istoricul utilizatorului
+        user.addTransaction(transaction);
+    }
+
+
     // Creare tranzacție pentru un card nou
     public void createCardTransaction(int timestamp, Card card, Account account, User user) {
         if (user == null || account == null || card == null)
@@ -103,7 +119,6 @@ public class BankSystem {
         user.addTransaction(transaction);
     }
 
-
     // Creare tranzacție pentru "send money"
     public void createSendMoneyTransaction(int timestamp, Account sender, Account receiver, Double amount, String currency, String description) {
         if (sender == null || receiver == null || amount == null || amount <= 0)
@@ -121,7 +136,7 @@ public class BankSystem {
     }
 
     // Creare tranzacție pentru "received money"
-    public void createReceivedMoneyTransaction(int timestamp, Account sender, Account receiver, Double amount, String currency) {
+    public void createReceivedMoneyTransaction(int timestamp, Account sender, Account receiver, Double amount, Double rate, String currency, String description) {
         if (sender == null || receiver == null || amount == null || amount <= 0)
             return;
 
@@ -130,7 +145,7 @@ public class BankSystem {
             return;
 
         Transaction receivedTransaction = TransactionFactory.createReceivedMoneyTransaction(timestamp, sender.getIBAN(),
-                receiver.getIBAN(), amount, currency);
+                receiver.getIBAN(), amount, rate, currency, description);
         receiverUser.addTransaction(receivedTransaction);
     }
 
@@ -200,8 +215,10 @@ public class BankSystem {
 
         if ("classic".equals(accountType))
             account = new ClassicAccount(currency, command.getEmail(), IBAN);
-        else if ("savings".equals(accountType))
-            account = new SavingsAccount(currency, command.getEmail(), 0, IBAN); // Initial interest rate set to 0
+        else if ("savings".equals(accountType)) {
+            double interestRate = command.getInterestRate();
+            account = new SavingsAccount(currency, command.getEmail(), interestRate, IBAN);
+        }
 
         user.addAccount(account);
         createAccountTransaction(command.getTimestamp(), account, user);
@@ -257,6 +274,7 @@ public class BankSystem {
 
     private void deleteAccount(CommandInput command, ArrayNode output) {
         User user = Tools.findUserByEmail(command.getEmail(), users);
+        int timestamp = command.getTimestamp();
 
         if (user == null)
             return;
@@ -302,6 +320,7 @@ public class BankSystem {
             output.add(commandResultNode);
         } else {
             deleteAccountError(command, output);
+            createDeleteAccountErrorTransaction(timestamp, user);
         }
     }
 
@@ -457,8 +476,9 @@ public class BankSystem {
 
         // Conversie in moneda receiverului
         double finalAmount = amount;
+        double exchangeRate = 1;
         if (!senderAccount.getCurrency().equals(receiverAccount.getCurrency())) {
-            double exchangeRate = ExchangeRate.getExchangeRate(
+            exchangeRate = ExchangeRate.getExchangeRate(
                     senderAccount.getCurrency(),
                     receiverAccount.getCurrency(),
                     exchangeRates
@@ -479,9 +499,10 @@ public class BankSystem {
         senderAccount.spend(amount);
         receiverAccount.deposit(finalAmount);
 
+
         // Creare tranzactii in listele ambilor useri
         createSendMoneyTransaction(timestamp, senderAccount, receiverAccount, amount, senderAccount.getCurrency(), description);
-        createReceivedMoneyTransaction(timestamp, senderAccount, receiverAccount, finalAmount, receiverAccount.getCurrency());
+        createReceivedMoneyTransaction(timestamp, senderAccount, receiverAccount, amount, exchangeRate, receiverAccount.getCurrency(), description);
     }
 
 
@@ -581,7 +602,29 @@ public class BankSystem {
         }
     }
 
+    private void createSplitTransactionForUser(
+            int timestamp,
+            double splitAmount,
+            double totalAmount,
+            String currency,
+            String cheapIBAN,
+            List<String> accounts,
+            User user) {
+        if (user == null || accounts == null || accounts.isEmpty()) {
+            return; // Verificăm dacă utilizatorul sau lista de conturi este invalidă
+        }
+
+        // Creează tranzacția de tip split folosind TransactionFactory
+        Transaction splitTransaction = TransactionFactory.createSplitErrorTransaction(
+                splitAmount, timestamp, totalAmount, currency, cheapIBAN, accounts
+        );
+
+        // Adaugă tranzacția în lista de tranzacții a utilizatorului
+        user.addTransaction(splitTransaction);
+    }
+
     private void splitPayment(CommandInput command) {
+
         List<String> ibans = command.getAccounts();
         double totalAmount = command.getAmount();
         double splitAmount = totalAmount / ibans.size();
@@ -597,8 +640,8 @@ public class BankSystem {
 
             if (account.getBalance() < finalSplitAmount) {
                 canDoSplit = false;
-                cheapIBAN = IBAN;
-                 // break;
+                cheapIBAN = IBAN; // Ultimul cont care nu poate efectua plata
+                // break;
             }
         }
 
@@ -611,16 +654,11 @@ public class BankSystem {
                 createSuccessSplitTransaction(timestamp, totalAmount, splitAmount, currency, ibans, currUser);
             }
         } else {
-            // Create a split error transaction and associate it with the involved accounts
-            Transaction splitErrorTransaction = TransactionFactory.createSplitErrorTransaction(
-                    splitAmount, timestamp, totalAmount, currency, cheapIBAN, ibans
-            );
-
-            // Add the transaction to the affected user's transaction list
+            // Creăm tranzacția de eroare doar o singură dată pentru fiecare utilizator
             for (String IBAN : ibans) {
-                User user = Tools.findUserByAccount(IBAN, users);
-                if (user != null) {
-                    user.addTransaction(splitErrorTransaction);
+                    User user = Tools.findUserByAccount(IBAN, users);
+                    if (user != null) {
+                        createSplitTransactionForUser(timestamp, splitAmount, totalAmount, currency, cheapIBAN, ibans, user);
                 }
             }
         }
@@ -653,7 +691,57 @@ public class BankSystem {
         output.add(reportNode);
     }
 
+    private void addInterest(CommandInput command, ArrayNode output) {
+        int timestamp = command.getTimestamp();
+        String IBAN = command.getAccount();
 
+        Account account = Tools.findAccountByIBAN(IBAN, users);
+
+        if (account == null) {
+            return;
+        }
+
+        if (account.isSavingsAccount()) {
+            SavingsAccount savingsAccount = (SavingsAccount) account;
+            double interestRate = savingsAccount.getInterestRate();
+            double balance = savingsAccount.getBalance();
+            savingsAccount.deposit(interestRate * balance);
+        } else {
+            ObjectNode result = output.addObject(); // Creează un nou nod în ArrayNode
+            result.put("command", "addInterest");
+            result.put("timestamp", timestamp);
+            // Adaugă mesaj de eroare pentru conturi non-economii
+            ObjectNode errorOutput = result.putObject("output");
+            errorOutput.put("description", "This is not a savings account");
+            errorOutput.put("timestamp", timestamp);
+        }
+    }
+
+    private void changeInterestRate(CommandInput command, ArrayNode output) {
+        int timestamp = command.getTimestamp();
+        String IBAN = command.getAccount();
+
+        Account account = Tools.findAccountByIBAN(IBAN, users);
+
+        if (account == null) {
+            return;
+        }
+
+        if (account.isSavingsAccount()) {
+            SavingsAccount savingsAccount = (SavingsAccount) account;
+            double interestRate = savingsAccount.getInterestRate();
+            savingsAccount.setInterestRate(interestRate);
+
+        } else {
+            ObjectNode result = output.addObject(); // Creează un nou nod în ArrayNode
+            result.put("command", "changeInterestRate");
+            result.put("timestamp", timestamp);
+            // Adaugă mesaj de eroare pentru conturi non-economii
+            ObjectNode errorOutput = result.putObject("output");
+            errorOutput.put("description", "This is not a savings account");
+            errorOutput.put("timestamp", timestamp);
+        }
+    }
 
 }
 

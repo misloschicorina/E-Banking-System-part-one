@@ -89,4 +89,8 @@ public abstract class Account {
         this.cards.clear();
     }
 
+    public boolean isSavingsAccount() {
+        return false;
+    }
+
 }

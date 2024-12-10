@@ -26,77 +26,70 @@ public class ExchangeRate {
     }
 
     /**
-     * Constructie matrice de adiacenta pe baza ratelor de schimb
-     */
-    public static double[][] buildAdjacencyMatrix(List<ExchangeRate> exchangeRates, List<String> currencies) {
-        int n = currencies.size();
-        double[][] adjacencyMatrix = new double[n][n];
-
-        // Inițializează matricea cu valori mari (∞) pentru a indica absența muchiilor
-        for (int i = 0; i < n; i++) {
-            Arrays.fill(adjacencyMatrix[i], Double.POSITIVE_INFINITY);
-            adjacencyMatrix[i][i] = 1.0; // Rata de conversie către sine este 1
-        }
-
-        // Adaugă ratele de schimb în matrice
-        for (ExchangeRate rate : exchangeRates) {
-            int fromIndex = currencies.indexOf(rate.getFrom());
-            int toIndex = currencies.indexOf(rate.getTo());
-
-            adjacencyMatrix[fromIndex][toIndex] = rate.getRate();
-            adjacencyMatrix[toIndex][fromIndex] = 1.0 / rate.getRate(); // Adaugă rata inversă
-        }
-
-        return adjacencyMatrix;
-    }
-
-    /**
-     * Folosim algoritmul Floyd-Warshall pt calculul ratei de schimb minime
-     */
-    public static void floydWarshall(double[][] adjacencyMatrix) {
-        int n = adjacencyMatrix.length;
-
-        for (int k = 0; k < n; k++) {
-            for (int i = 0; i < n; i++) {
-                for (int j = 0; j < n; j++) {
-                    if (adjacencyMatrix[i][k] != Double.POSITIVE_INFINITY &&
-                            adjacencyMatrix[k][j] != Double.POSITIVE_INFINITY) {
-                        adjacencyMatrix[i][j] = Math.min(adjacencyMatrix[i][j],
-                                adjacencyMatrix[i][k] * adjacencyMatrix[k][j]);
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * Găsește rata de schimb între două monede folosind matricea de adiacență.
+     * Găsește rata de schimb între două monede folosind DFS.
      */
     public static double getExchangeRate(String from, String to, List<ExchangeRate> exchangeRates) {
-        // Fac o lista de monede distincte
-        List<String> currencies = getCurrencies(exchangeRates);
+        // Construim graful ca hartă de adiacență
+        Map<String, Map<String, Double>> graph = buildGraph(exchangeRates);
 
-        // Construiesc matrice de adiacenta care reprezinta graful, unde nodurile sunt monede
-        double[][] adjacencyMatrix = buildAdjacencyMatrix(exchangeRates, currencies);
-
-        // Aplic alg pt a gasi distanta minima dintre 2 monede
-        floydWarshall(adjacencyMatrix);
-
-        // Gasesc indicii pt cele 2 monede inte care se face conversie
-        int fromIndex = currencies.indexOf(from);
-        int toIndex = currencies.indexOf(to);
-
-        if (fromIndex == -1 || toIndex == -1) {
-            // Dacă cel puțin una dintre monede nu este în listă, returnăm 0
+        // Dacă monedele nu există în graful nostru, returnăm 0
+        if (!graph.containsKey(from) || !graph.containsKey(to)) {
             return 0;
         }
 
-        // Returnăm rata de schimb din matrice
-        return adjacencyMatrix[fromIndex][toIndex];
+        // Set pentru a urmări nodurile vizitate
+        Set<String> visited = new HashSet<>();
+
+        // Căutare folosind DFS
+        return dfs(graph, from, to, 1.0, visited);
     }
 
     /**
-     * Extrag lista de monede distincte din input
+     * Construiește graful din lista de ExchangeRate.
+     */
+    private static Map<String, Map<String, Double>> buildGraph(List<ExchangeRate> exchangeRates) {
+        Map<String, Map<String, Double>> graph = new HashMap<>();
+        for (ExchangeRate rate : exchangeRates) {
+            graph.putIfAbsent(rate.getFrom(), new HashMap<>());
+            graph.putIfAbsent(rate.getTo(), new HashMap<>());
+
+            graph.get(rate.getFrom()).put(rate.getTo(), rate.getRate());
+            graph.get(rate.getTo()).put(rate.getFrom(), 1.0 / rate.getRate());
+        }
+        return graph;
+    }
+
+    /**
+     * Algoritmul DFS pentru calculul ratei de schimb.
+     */
+    private static double dfs(Map<String, Map<String, Double>> graph, String current, String target, double product, Set<String> visited) {
+        // Dacă am găsit moneda țintă, returnăm produsul curent
+        if (current.equals(target)) {
+            return product;
+        }
+
+        // Adăugăm nodul curent la setul de vizitate
+        visited.add(current);
+
+        // Explorăm toate monedele vecine
+        for (Map.Entry<String, Double> neighbor : graph.get(current).entrySet()) {
+            String nextCurrency = neighbor.getKey();
+            double rate = neighbor.getValue();
+
+            if (!visited.contains(nextCurrency)) {
+                double result = dfs(graph, nextCurrency, target, product * rate, visited);
+                if (result != 0) {
+                    return result; // Dacă am găsit drumul, returnăm rata calculată
+                }
+            }
+        }
+
+        // Dacă nu găsim drumul, returnăm 0
+        return 0;
+    }
+
+    /**
+     * Extrag lista de monede distincte din input.
      */
     private static List<String> getCurrencies(List<ExchangeRate> exchangeRates) {
         Set<String> currencySet = new HashSet<>();
@@ -106,4 +99,6 @@ public class ExchangeRate {
         }
         return new ArrayList<>(currencySet);
     }
+
+
 }

@@ -145,8 +145,8 @@ public class Tools {
                     if ("Card payment".equals(transaction.getDescription())) {
                         transactionNode.put("amount", transaction.getAmount());
                     } else {
-                        String formattedAmount = String.format("%.1f %s",
-                                transaction.getAmount(), transaction.getCurrency());
+                        String formattedAmount = transaction.getAmount() + " " + transaction.getCurrency();
+
                         transactionNode.put("amount", formattedAmount);
                     }
                 }
@@ -233,9 +233,9 @@ public class Tools {
         if (includeCommerciants && commerciantsTotals != null) {
             ArrayNode commerciantsArray = objectMapper.createArrayNode();
 
-            // Sortare comercianți după suma totală descrescător
+            // Sortare comercianți alfabetic
             commerciantsTotals.entrySet().stream()
-                    .sorted((e1, e2) -> Double.compare(e2.getValue(), e1.getValue()))
+                    .sorted(Map.Entry.comparingByKey()) // Comparator pentru chei (alfabetic)
                     .forEach(entry -> {
                         ObjectNode commerciantNode = objectMapper.createObjectNode();
                         commerciantNode.put("commerciant", entry.getKey());
@@ -248,7 +248,6 @@ public class Tools {
 
         return outputNode;
     }
-
 
     private static ObjectNode createErrorNode(CommandInput command, String message) {
         ObjectMapper objectMapper = new ObjectMapper();
