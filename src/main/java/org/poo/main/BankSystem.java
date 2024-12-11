@@ -187,6 +187,11 @@ public class BankSystem {
         user.addTransaction(splitTransaction);
     }
 
+    private void createInterestRateChangeTransaction(int timestamp, double rate, User user) {
+        Transaction interestRateChangeTransaction = TransactionFactory.InterestRateChangeTransaction(timestamp, rate);
+        user.addTransaction(interestRateChangeTransaction);
+    }
+
     public void createSplitErrorTransaction(
             double splitAmount, int timestamp, double totalAmount, String currency, String cheapIBAN, List<String> accounts, User user) {
         if (user == null || accounts == null || accounts.isEmpty() || cheapIBAN == null || currency == null)
@@ -417,6 +422,7 @@ public class BankSystem {
 
             if (card.isOneTimeCard())
                 handleOneTimeCard(user, card, account, timestamp);
+
         } else {
             createInsuffiecientFundsTransaction(timestamp, "Insufficient funds", user, account.getIBAN());
         }
@@ -425,8 +431,14 @@ public class BankSystem {
     private void handleOneTimeCard(User user, Card card, Account account, int timestamp) {
         OneTimeCard oneTimeCard = (OneTimeCard) card;
 
-        if (!oneTimeCard.isUsed()) {
+        if (!oneTimeCard.isUsed())
             oneTimeCard.markAsUsed();
+
+
+
+        if (oneTimeCard.isUsed() == true) {
+            account.removeCard(oneTimeCard);
+            createDeletedCardTransaction(timestamp, account, card, user);
 
             // Creating a new card after payment
             String newCardNumber = Utils.generateCardNumber();
@@ -439,8 +451,6 @@ public class BankSystem {
             createCardTransaction(timestamp, newOneTimeCard, account, user);
         }
 
-        if (oneTimeCard.isUsed() == true)
-            account.removeCard(oneTimeCard);
     }
 
 
@@ -679,6 +689,29 @@ public class BankSystem {
     }
 
     private void spendingsReport(CommandInput command, ArrayNode output) {
+        String IBAN = command.getAccount(); // Preia IBAN-ul contului din comandă
+        int timestamp = command.getTimestamp();
+
+        Account account = Tools.findAccountByIBAN(IBAN, users); // Găsește contul asociat IBAN-ului
+
+        // Verifică dacă contul este de tip savings
+        if (account != null && account.isSavingsAccount()) {
+            // Creează răspunsul de eroare
+            ObjectNode errorNode = objectMapper.createObjectNode();
+            errorNode.put("command", command.getCommand());
+
+            ObjectNode errorOutput = objectMapper.createObjectNode();
+            errorOutput.put("error", "This kind of report is not supported for a saving account");
+
+            errorNode.set("output", errorOutput);
+            errorNode.put("timestamp", timestamp);
+
+            // Adaugă eroarea în output
+            output.add(errorNode);
+            return; // Ieși din metodă pentru a opri procesarea în continuare
+        }
+
+        // Dacă contul nu este savings, continuă cu generarea raportului
         ObjectNode reportNode = objectMapper.createObjectNode();
         reportNode.put("command", command.getCommand());
 
@@ -686,10 +719,11 @@ public class BankSystem {
         ObjectNode outputNode = Tools.generateReportData(command, filter, true, users, exchangeRates);
 
         reportNode.set("output", outputNode);
-        reportNode.put("timestamp", command.getTimestamp());
+        reportNode.put("timestamp", timestamp);
 
         output.add(reportNode);
     }
+
 
     private void addInterest(CommandInput command, ArrayNode output) {
         int timestamp = command.getTimestamp();
@@ -722,15 +756,22 @@ public class BankSystem {
         String IBAN = command.getAccount();
 
         Account account = Tools.findAccountByIBAN(IBAN, users);
+        User user = Tools.findUserByAccount(IBAN, users);
 
-        if (account == null) {
+        double interestRate = command.getInterestRate();
+
+        if (account == null)
             return;
-        }
+
+        if (user == null)
+            return;
+
 
         if (account.isSavingsAccount()) {
             SavingsAccount savingsAccount = (SavingsAccount) account;
-            double interestRate = savingsAccount.getInterestRate();
             savingsAccount.setInterestRate(interestRate);
+
+            createInterestRateChangeTransaction(timestamp, interestRate, user);
 
         } else {
             ObjectNode result = output.addObject(); // Creează un nou nod în ArrayNode

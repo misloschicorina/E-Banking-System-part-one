@@ -267,18 +267,36 @@ public class Tools {
         int endTimestamp = command.getEndTimestamp();
         List<Transaction> filteredTransactions = new ArrayList<>();
 
-        for (Transaction transaction : transactions) {
+        for (int i = 0; i < transactions.size(); i++) {
+            Transaction transaction = transactions.get(i);
+
+            // Verificăm dacă tranzacția este în interval și respectă filtrul
             if (transaction.getTimestamp() >= startTimestamp &&
                     transaction.getTimestamp() <= endTimestamp &&
                     filter.filter(transaction, IBAN)) {
+
+                Transaction lastTransaction = null;
+
+                // Verificăm dacă lista nu este goală
+                if (!filteredTransactions.isEmpty())
+                    lastTransaction = filteredTransactions.get(filteredTransactions.size() - 1);
+
+
+                // Sărim peste tranzacție dacă este duplicat (același timestamp ca ultima)
+                if (lastTransaction != null && lastTransaction.getTimestamp() == transaction.getTimestamp())
+                    continue;
+
+
+                // Adăugăm tranzacția la listă
                 filteredTransactions.add(transaction);
             }
         }
 
-        // Sortează tranzacțiile
+        // Sortăm tranzacțiile după timestamp
         filteredTransactions.sort((t1, t2) -> Integer.compare(t1.getTimestamp(), t2.getTimestamp()));
         return filteredTransactions;
     }
+
 
     private static Map<String, Double> calculateCommerciantsTotals(List<Transaction> transactions) {
         Map<String, Double> commerciantsTotals = new HashMap<>();

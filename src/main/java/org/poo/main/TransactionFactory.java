@@ -178,5 +178,24 @@ public class TransactionFactory {
         );
     }
 
+    public static Transaction InterestRateChangeTransaction(int timestamp, double rate) {
+        return new Transaction(
+                timestamp,
+                "Interest rate of the account changed to " + rate,
+                null, // Sender IBAN
+                null, // Receiver IBAN
+                null, // Amount
+                null, // Currency
+                null, // Transfer type
+                null, // Card number
+                null, // Email
+                null, // Account IBAN
+                null, // Commerciant
+                null, // Card holder
+                null, // Involved accounts
+                null  // Error message
+        );
+    }
+
 
 }
