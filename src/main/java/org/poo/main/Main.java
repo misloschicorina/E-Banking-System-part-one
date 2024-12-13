@@ -6,6 +6,9 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import org.poo.checker.Checker;
 import org.poo.checker.CheckerConstants;
 import org.poo.fileio.ObjectInput;
+import org.poo.main.bank.BankSystem;
+import org.poo.main.exchange_rate.ExchangeRate;
+import org.poo.main.user.User;
 
 import java.io.File;
 import java.io.IOException;
@@ -74,11 +77,9 @@ public final class Main {
 
         ArrayNode output = objectMapper.createArrayNode();
 
-       // de aici modific eu:
-
         BankSystem bankSystem = new BankSystem();
 
-        // parsing the users from input
+        // Parsing the users from input and adding them to the bank system
         for (var userInput : inputData.getUsers()) {
             User user = new User(userInput.getFirstName(),
                     userInput.getLastName(),
@@ -86,6 +87,7 @@ public final class Main {
             bankSystem.addUser(user);
         }
 
+        // Parsing the exchange rates from input and adding them to the bank system
         for (var exchangeRateInput : inputData.getExchangeRates()) {
             ExchangeRate exchangeRate = new ExchangeRate(
                     exchangeRateInput.getFrom(),
@@ -95,10 +97,8 @@ public final class Main {
             bankSystem.addExchangeRate(exchangeRate);
         }
 
-        // procesare comenzi
+        // Process the commands from the input and generate the output
         bankSystem.processCommands(inputData.getCommands(), output);
-
-        // pana aici am adaugat eu!
 
         ObjectWriter objectWriter = objectMapper.writerWithDefaultPrettyPrinter();
         objectWriter.writeValue(new File(filePath2), output);
