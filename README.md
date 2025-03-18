@@ -1,45 +1,130 @@
-# Project Assignment POO  - J. POO Morgan - Phase One
+MISLOSCHI ALEXANDRA CORINA 324 CA - PROIECT ETAPA 1
 
-![](https://s.yimg.com/ny/api/res/1.2/aN0SfZTtLF5hLNO0wIN3gg--/YXBwaWQ9aGlnaGxhbmRlcjt3PTcwNTtoPTQyNztjZj13ZWJw/https://o.aolcdn.com/hss/storage/midas/b23d8b7f62a50a7b79152996890aa052/204855412/fit.gif)
+# E-Banking System
 
-#### Assignment Link: [https://ocw.cs.pub.ro/courses/poo-ca-cd/teme/2024/proiect-e1](https://ocw.cs.pub.ro/courses/poo-ca-cd/teme/2024/proiect-e1)
+## Introduction
 
-## Skel Structure
+This project implements a simplified e-banking system in Java.
+The system simulates basic banking functionalities, allowing users to create accounts, 
+manage funds, and perform financial transactions while maintaining a secure and 
+structured platform. The challenge lies in managing users, their accounts, and their
+transactions while ensuring that operations are efficient and data integrity is maintained.
 
-* src/
-    * checker/ - checker files
-    * fileio/ - contains classes used to read data from the json files
-    * main/
-        * Main - the Main class runs the checker on your implementation. Add the entry point to your implementation in it. Run Main to test your implementation from the IDE or from command line.
-        * Test - run the main method from Test class with the name of the input file from the command line and the result will be written
-          to the out.txt file. Thus, you can compare this result with ref.
-* input/ - contains the tests in JSON format
-* ref/ - contains all reference output for the tests in JSON format
+## Core Concepts
 
-## Tests
+The system revolves around managing users, accounts, and transactions. 
+Here's how each element fits together:
 
-Tests Basic 1 - 8: Infrastructure \
-Tests Functional 9 - 17: Advanced \
-Tests Flow 18 - 20: Large Input
+### Users
+Each user in the banking system will have personal information, including their name and
+email address. These users can own multiple accounts, and each account can have different 
+types, such as classic accounts or savings accounts.
 
-1. test01_create - 2p
-2. test02_delete - 2p
-3. test03_one_time_card - 2p
-4. test04_funds - 2p
-5. test05_money_flow - 2p
-6. test06_non_existing - 2p
-7. test07_send_money_part1 - 3p
-8. test08_send_money_part2 - 3p
-9. test09_print_transactions - 3p
-10. test10_errors - 3p
-11. test11_card_status - 5p
-12. test12_continuous_payments - 5p
-13. test13_savings_account - 5p
-14. test14_split_payments - 5p
-15. test15_every_payment - 5p
-16. test16_report - 5p
-17. test17_spendings_report - 5p
-18. test18_large_input_1 - 7p
-19. test19_large_input_2 - 7p
-20. test19_large_input_3 - 7p
+### Accounts
+A user can have multiple accounts, and each account can be of one of two types:
 
+- **Classic Account**: A standard account type with basic functionalities like deposit, 
+    withdrawal, and transfer.
+- **Savings Account**: An account that generates interest over time and has additional 
+    features, such as setting and modifying interest rates.
+
+### Cards
+Accounts can have associated cards. The system supports two types of cards:
+
+- **Classic Cards**: Regular cards for standard transactions.
+- **One-time Cards**: Cards that are designed for a single transaction. Once used, they
+    are automatically deleted from the system and a new card must be regenerated for 
+    future transactions.
+
+### Transactions
+Every action taken by a user that affects their account is recorded as a transaction. 
+These transactions are stored in ascending order by timestamp and can be printed 
+using the `printTransactions` command. This command will provide a complete history 
+of a user’s transactions.
+
+### Exchange Rates
+Since banks often deal with multiple currencies, exchange rates will be stored to
+enable currency conversions between different account types. The exchange rate will 
+be specified between a "from" and a "to" currency, along with the corresponding rate.
+
+## System Design
+
+Based on user input and current exchange rates, the system is designed to keep a 
+comprehensive list of users. Each user has:
+
+- A list of accounts (either classic or savings).
+- Each account can have multiple cards (classic or one-time).
+- Users also have a list of transactions associated with their accounts, stored 
+in ascending order by timestamp. This list will be used when querying transactions 
+with the `printTransactions` command.
+
+## Transaction Factory
+
+The TransactionFactory class is utilized to streamline the creation of transaction 
+objects across the e-banking system. Employing the Factory design pattern, this class
+simplifies the instantiation process for various transaction types, each tailored to 
+specific banking operations such as account or card creation, card payments, money
+transfers and error handling.
+
+## Commands Implemented
+
+Below is a description of each implemented command:
+
+### `printUsers`
+- Displays all users, along with their associated accounts and cards.
+
+### `addAccount`
+- Adds a new account for a user (either classic or savings).
+
+### `createCard`
+- Creates a new card for a user’s account.
+
+### `createOneTimeCard`
+- Creates a one-time use card for a user’s account.
+
+### `addFunds`
+- Adds funds to an existing account.
+
+### `deleteAccount`
+- Deletes an account from a user.
+
+### `deleteCard`
+- Deletes a card from a user’s account.
+
+### `payOnline`
+- Allows users to make online payments using their cards.
+
+### `sendMoney`
+- Transfers funds between accounts or to another user’s account.
+
+### `setAlias`
+- Assigns an alias to an account to make it easier to identify.
+
+### `printTransactions`
+- Displays all transactions for a specific user.
+
+### `setMinimumBalance`
+- Sets a minimum balance requirement for an account.
+
+### `checkCardStatus`
+- Checks the status of a user’s card (whether it’s active or blocked).
+
+### `splitPayment`
+- Splits a payment across multiple accounts.
+
+### `report`
+- Generates a report of all transactions for a specified account between two timestamps.
+
+### `spendingsReport`
+- Generates a report of the spending activity from a specific account, limited to 
+transactions that occurred between two designated timestamps.
+
+### `addInterest`
+- Adds interest to a savings account.
+
+### `changeInterestRate`
+- Changes the interest rate of a savings account.
+
+These commands are part of the system’s functionality and are mapped to specific 
+user actions to simulate typical banking operations. Each command has a defined behavior 
+to ensure the proper handling of transactions, account management, and reporting.

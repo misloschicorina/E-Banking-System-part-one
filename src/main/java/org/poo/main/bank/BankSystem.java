@@ -68,7 +68,6 @@ public class BankSystem {
     private void printUsers(final CommandInput command, final ArrayNode output) {
         // Create a node as the command result
         ObjectNode commandResultNode = objectMapper.createObjectNode();
-
         commandResultNode.put("command", "printUsers");
 
         // Create an array to hold the users
@@ -100,7 +99,6 @@ public class BankSystem {
 
         Account account = null;
 
-        // Generate a unique IBAN for the new account
         String iban = Utils.generateIBAN();
 
         // Create the account based on the account type
@@ -517,7 +515,7 @@ public class BankSystem {
             }
         }
 
-        // If no card is found, return an error response in the output
+        // If no card is found, return an error response
         if (foundCard == null) {
             cardCheckError("checkCardStatus", timestamp, output);
             return;
@@ -556,13 +554,12 @@ public class BankSystem {
         boolean canDoSplit = true;
         String cheapIBAN = null;
 
-        // Check all IBANs to check if each account has enough balance for the split payment
+        // Check all IBANs to see if each account has enough balance for the split payment
         for (String iban : ibans) {
             Account account = Tools.findAccountByIBAN(iban, users);
             double finalSplitAmount =
                     Tools.calculateFinalAmount(account, splitAmount, exchangeRates, currency);
 
-            // Check if there is any account without needed funds
             if (account.getBalance() < finalSplitAmount) {
                 canDoSplit = false;
                 cheapIBAN = iban;

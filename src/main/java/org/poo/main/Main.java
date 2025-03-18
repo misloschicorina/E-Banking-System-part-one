@@ -81,7 +81,8 @@ public final class Main {
 
         // Parsing the users from input and adding them to the bank system
         for (var userInput : inputData.getUsers()) {
-            User user = new User(userInput.getFirstName(),
+            User user = new User(
+                    userInput.getFirstName(),
                     userInput.getLastName(),
                     userInput.getEmail());
             bankSystem.addUser(user);

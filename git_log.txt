@@ -1,0 +1,83 @@
+commit 40377fc8ee7dddef2003d4f9e4616831f8e8bd5f
+Author: Alexandra <alexandra.misloschi@stud.acs.upb.ro>
+Date:   Fri Dec 13 22:37:34 2024 +0200
+
+    Resolved checkstyle errors
+
+commit 8ecd3d00467cb6fc03aad4a91906a3d744f97496
+Author: Alexandra <alexandra.misloschi@stud.acs.upb.ro>
+Date:   Wed Dec 11 11:39:28 2024 +0200
+
+    Made all tests pass
+
+commit 7790f4d108e378e6bc2a9d370baaa15bc4f82ea3
+Author: Alexandra <alexandra.misloschi@stud.acs.upb.ro>
+Date:   Tue Dec 10 15:57:44 2024 +0200
+
+    Resolved precision on test 18
+
+commit 0c230d92cb5a76020b91843b98314bf6650f1258
+Author: Alexandra <alexandra.misloschi@stud.acs.upb.ro>
+Date:   Mon Dec 9 19:50:30 2024 +0200
+
+    Resolved split error
+
+commit 2f1a1d6e027771ff9c4c7099fca29ac62a11e212
+Author: Alexandra <alexandra.misloschi@stud.acs.upb.ro>
+Date:   Mon Dec 9 15:15:34 2024 +0200
+
+    Implemented report and spendingsReport commands
+
+commit 9cb59953970b02b01f0f40a2368bedccf8bbd191
+Author: Alexandra <alexandra.misloschi@stud.acs.upb.ro>
+Date:   Sun Dec 8 13:13:41 2024 +0200
+
+    Passed first 15 tests
+
+commit bb88d939e7669d4a7684c11d121d2e0339f69e68
+Author: Alexandra <alexandra.misloschi@stud.acs.upb.ro>
+Date:   Sat Dec 7 17:30:21 2024 +0200
+
+    Implemented printTransaction method
+
+commit 01d5dfefc835d849fad51c0e000ee3ef34e1c196
+Author: Alexandra <alexandra.misloschi@stud.acs.upb.ro>
+Date:   Sat Dec 7 15:22:48 2024 +0200
+
+    Implemented sendMoney command
+
+commit db45e1c7c5ec0a4be1db6b6b34a2a4295827c4c8
+Author: Alexandra <alexandra.misloschi@stud.acs.upb.ro>
+Date:   Fri Dec 6 22:15:00 2024 +0200
+
+    implemented online payment command
+
+commit 89c89ec5ea63b6b9935dbe53dd821376d9538be0
+Author: Alexandra <alexandra.misloschi@stud.acs.upb.ro>
+Date:   Fri Dec 6 17:26:13 2024 +0200
+
+    Implemented deleteAccount command
+
+commit b47f002d1a9671062a1c28a3c2e5e451db1bfdbd
+Author: Alexandra <alexandra.misloschi@stud.acs.upb.ro>
+Date:   Fri Dec 6 16:10:12 2024 +0200
+
+    Implemented logic for passing first test
+
+commit a7ce2141dc4c14833a83c56f4023b254093033fa
+Author: Alexandra <alexandra.misloschi@stud.acs.upb.ro>
+Date:   Fri Dec 6 16:09:38 2024 +0200
+
+    Implemented logic for passing first test
+
+commit 7c5b9eef216c9d7189662dbe7a008a4c06fef314
+Author: Alexandra <alexandra.misloschi@stud.acs.upb.ro>
+Date:   Wed Dec 4 06:43:54 2024 +0200
+
+    Check
+
+commit f5e3b6bf53e3aea9c46586b31dd73b7e55778354
+Author: Alexandra <alexandra.misloschi@stud.acs.upb.ro>
+Date:   Sat Nov 30 21:24:41 2024 +0200
+
+    Descarcat schelet
